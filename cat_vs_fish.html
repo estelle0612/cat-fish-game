@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cat vs Fish</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #a0e8ff;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    const cat = { x: 100, y: canvas.height - 100, radius: 20, vx: 0, vy: 0, launched: false };
+    const gravity = 0.5;
+
+    const fishes = [];
+    for (let i = 0; i < 5; i++) {
+      fishes.push({
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: Math.random() * (canvas.height / 2),
+        radius: 20,
+        dx: (Math.random() < 0.5 ? -1 : 1) * 2
+      });
+    }
+
+    let launchPower = 0;
+    let charging = false;
+
+    function drawCat() {
+      ctx.beginPath();
+      ctx.arc(cat.x, cat.y, cat.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'orange';
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawFishes() {
+      fishes.forEach(fish => {
+        ctx.beginPath();
+        ctx.arc(fish.x, fish.y, fish.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+        ctx.closePath();
+      });
+    }
+
+    function updateFishes() {
+      fishes.forEach(fish => {
+        fish.x += fish.dx;
+        if (fish.x < 0 || fish.x > canvas.width) fish.dx *= -1;
+      });
+    }
+
+    function checkCollisions() {
+      fishes.forEach((fish, i) => {
+        const dx = cat.x - fish.x;
+        const dy = cat.y - fish.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < cat.radius + fish.radius) {
+          score++;
+          fishes.splice(i, 1);
+        }
+      });
+    }
+
+    function drawScore() {
+      ctx.font = '24px Arial';
+      ctx.fillStyle = 'black';
+      ctx.fillText(`Score: ${score}`, 20, 40);
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (cat.launched) {
+        cat.vy += gravity;
+        cat.x += cat.vx;
+        cat.y += cat.vy;
+      }
+
+      drawCat();
+      drawFishes();
+      drawScore();
+      updateFishes();
+      checkCollisions();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    canvas.addEventListener('mousedown', () => {
+      charging = true;
+      launchPower = 0;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (!cat.launched) {
+        cat.vx = launchPower / 2;
+        cat.vy = -launchPower;
+        cat.launched = true;
+      }
+      charging = false;
+    });
+
+    setInterval(() => {
+      if (charging && launchPower < 30) launchPower += 1;
+    }, 50);
+
+    gameLoop();
+  </script>
+</body>
+</html>
